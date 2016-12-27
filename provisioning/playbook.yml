@@ -1,0 +1,54 @@
+- hosts: all
+  become: yes
+  user: vagrant
+  tasks:
+    - name: 基本パッケージインストール
+      apt: name={{item}} state=present update_cache=true
+      with_items:
+        - vim
+        - git
+        - zsh
+        - apt-transport-https
+        - ca-certificates
+        - python-pip
+- hosts: all
+  user: vagrant
+  tasks:
+    - name: preztoをダウンロード
+      git: repo=https://github.com/sorin-ionescu/prezto.git dest=~/.zprezto
+    - name: preztoをインストール
+      file: state=link src=~/.zprezto/runcoms/{{ item }} path=~/.{{ item }}
+      with_items:
+        - zlogin
+        - zlogout
+        - zprofile
+        - zshenv
+        - zshrc
+        - zpreztorc
+- hosts: all
+  become: yes
+  user: vagrant
+  tasks:
+    - name: docker - インストール
+      command: /bin/zsh -lc "apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D"
+    - name: docker - apt
+      command: /bin/zsh -lc "apt-add-repository 'deb https://apt.dockerproject.org/repo ubuntu-xenial main'"
+    - name: docker -
+      command: /bin/zsh -lc "apt-cache policy docker-engine"
+    - name: docker install
+      apt: name=docker-engine state=present update_cache=true
+    - name: docker user
+      user: name=ubuntu groups=docker append=true
+- hosts: all
+  become: yes
+  user: vagrant
+  tasks:
+    - name: docker-py - インストール
+      pip: name=docker-py 
+- hosts: all
+  become: yes
+  user: docker
+  tasks:
+    - name: deploy centos container
+      docker: image=ruby name=web01 ports=80:80 expose=80 tty=yes
+
